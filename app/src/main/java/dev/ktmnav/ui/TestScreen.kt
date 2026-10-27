@@ -64,7 +64,7 @@ fun TestScreen() {
     val status by c.engine.status.collectAsStateWithLifecycle()
     val settings by c.settings.collectAsStateWithLifecycle()
     val running by c.simulator.running.collectAsStateWithLifecycle()
-    var message by remember { mutableStateOf("KTM Nav test") }
+    var message by remember { mutableStateOf("Ride Nav test") }
 
     fun sendTurn(label: String, icon: TurnIcon) {
         c.engine.sendTest(

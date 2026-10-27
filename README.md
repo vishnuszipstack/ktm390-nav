@@ -1,4 +1,4 @@
-# KTM Nav
+# Ride Nav 390 (KTM 390 Adventure navigation bridge)
 
 Android companion that sends Google Maps turn-by-turn guidance to the TFT of a
 **KTM 390 Adventure (2022)** over the bike's MY RIDE Bluetooth link. The phone does the
@@ -11,7 +11,7 @@ Independent project. Not made by, affiliated with or endorsed by KTM or Google.
 
 Every push to `main` builds the app in GitHub Actions and publishes it as a release:
 **[Latest release](https://github.com/vishnuszipstack/ktm390-nav/releases/latest)** →
-`ktm390-nav.apk`. After the first install, **Settings → Updates** installs newer builds
+`ride-nav-390.apk`. After the first install, **Settings → Updates** installs newer builds
 in place (every build is signed with the same key in `signing/`).
 
 ## First ride checklist (bike parked)

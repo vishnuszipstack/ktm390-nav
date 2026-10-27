@@ -105,13 +105,13 @@ fun DiagnosticsScreen() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = { share(context, "KTM Nav diagnostics", report(c, link)) }) { Text("Share report") }
+                Button(onClick = { share(context, "Ride Nav diagnostics", report(c, link)) }) { Text("Share report") }
                 OutlinedButton(onClick = { c.log.clear() }) { Text("Clear log") }
             }
             if (fixtures.isNotEmpty()) {
                 Text("${fixtures.size} navigation notifications captured for parser fixes.")
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = { share(context, "KTM Nav notification samples", fixturesText(fixtures)) }) { Text("Share samples") }
+                    OutlinedButton(onClick = { share(context, "Ride Nav notification samples", fixturesText(fixtures)) }) { Text("Share samples") }
                     TextButton(onClick = { NavListenerService.clearFixtures() }) { Text("Discard") }
                 }
             }
@@ -133,7 +133,7 @@ fun DiagnosticsScreen() {
 private fun report(c: AppContainer, link: LinkState): String {
     val s = c.settings.value
     val header = buildString {
-        appendLine("KTM Nav ${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
+        appendLine("Ride Nav 390 ${BuildConfig.VERSION_NAME} (build ${BuildConfig.VERSION_CODE})")
         appendLine("Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ${Build.MANUFACTURER} ${Build.MODEL}")
         appendLine("Protocol: ${c.adapter.profile.name}")
         appendLine("Link: ${link.label}")

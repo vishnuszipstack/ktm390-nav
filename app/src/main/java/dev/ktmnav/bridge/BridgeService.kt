@@ -119,7 +119,7 @@ class BridgeService : LifecycleService() {
     private fun buildNotification(state: String, turn: String?) =
         NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_bike)
-            .setContentTitle(turn ?: "KTM Nav bridge")
+            .setContentTitle(turn ?: "Ride Nav bridge")
             .setContentText(state)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

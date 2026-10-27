@@ -11,7 +11,8 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.ktmnav"
+        // Neutral id and name: no KTM branding in the installed app (spec FR-035).
+        applicationId = "dev.ridenav390"
         minSdk = 26
         targetSdk = 36
         // CI sets BUILD_NUMBER to the Actions run number, which is also the release tag (build-N).
@@ -23,20 +24,24 @@ android {
 
     // One fixed key for every build, so in-app updates install over the previous version.
     signingConfigs {
-        create("ktmnav") {
-            storeFile = rootProject.file("signing/ktmnav.jks")
-            storePassword = "ktm390-nav"
-            keyAlias = "ktmnav"
-            keyPassword = "ktm390-nav"
+        create("ridenav") {
+            storeFile = rootProject.file("signing/ridenav.p12")
+            storeType = "PKCS12"
+            storePassword = "ride-nav-390"
+            keyAlias = "ridenav"
+            keyPassword = "ride-nav-390"
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
         }
     }
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("ktmnav")
+            signingConfig = signingConfigs.getByName("ridenav")
         }
         release {
-            signingConfig = signingConfigs.getByName("ktmnav")
+            signingConfig = signingConfigs.getByName("ridenav")
             isMinifyEnabled = false
         }
     }
@@ -49,6 +54,11 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        // Release builds shouldn't fail on lint; CI runs the unit tests instead.
+        checkReleaseBuilds = false
     }
 
     testOptions {
