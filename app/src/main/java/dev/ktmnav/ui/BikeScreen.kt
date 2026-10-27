@@ -90,7 +90,7 @@ fun BikeScreen() {
                 if (!hasAccess) {
                     TextButton(onClick = {
                         runCatching { context.startActivity(NavListenerService.settingsIntent(context)) }
-                            .onFailure { context.startActivity(NavListenerService.fallbackSettingsIntent()) }
+                            .onFailure { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
                     }) { Text("Allow") }
                 }
             }
