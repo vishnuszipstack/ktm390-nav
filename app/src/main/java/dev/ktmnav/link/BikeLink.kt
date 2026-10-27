@@ -44,11 +44,13 @@ class BikeLink(
     var onConnected: (suspend () -> Unit)? = null
 
     /** Only the newest few frames matter; a backlog of old turns is worse than none. */
-    private val outbox = Channel<ByteArray>(capacity = 32, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val outbox = Channel<Pair<ByteArray, String>>(capacity = 32, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     private val lifecycle = Mutex()
     private var job: Job? = null
     private var device: BikeDevice? = null
     private var retryNow = CompletableDeferred<Unit>()
+
+    @Volatile private var lastWrite: Pair<Long, String>? = null
 
     /** The open transport, so cancelling can close it and unblock a pending read. */
     @Volatile private var current: Transport? = null
@@ -84,7 +86,7 @@ class BikeLink(
             log.log(DiagCategory.TFT, "not sent (no link): $what")
             return
         }
-        outbox.trySend(frame)
+        outbox.trySend(frame to what)
         log.log(DiagCategory.TFT, "queued: $what")
     }
 
@@ -107,6 +109,7 @@ class BikeLink(
                 withContext(io) { transport.open() }
                 attempt = 0
                 drainOutbox()
+                lastWrite = null
                 _state.value = LinkState.Connected(target, clock())
                 log.log(DiagCategory.LINK, "connected to ${target.name}")
                 session(transport)
@@ -115,6 +118,12 @@ class BikeLink(
                 throw e
             } catch (e: Exception) {
                 log.log(DiagCategory.LINK, "link ${if (attempt == 0) "lost" else "failed"}: ${e.message ?: e.javaClass.simpleName}")
+                // A drop right after a write points at the message, not the radio.
+                lastWrite?.let { (at, what) ->
+                    val ms = clock() - at
+                    if (ms in 0..3_000) log.log(DiagCategory.LINK, "bike closed the link ${ms} ms after: $what")
+                }
+                lastWrite = null
             }
             withContext(io) { runCatching { transport.close() } }
             current = null
@@ -164,8 +173,9 @@ class BikeLink(
         }
         val writer = launch(io) {
             try {
-                for (frame in outbox) {
+                for ((frame, what) in outbox) {
                     transport.write(frame)
+                    lastWrite = clock() to what
                     val s = _state.value
                     if (s is LinkState.Connected) _state.value = s.copy(lastWriteOkMs = clock())
                 }

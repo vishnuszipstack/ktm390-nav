@@ -15,6 +15,7 @@ import dev.ktmnav.nav.InstructionGate
 import dev.ktmnav.settings.AppSettings
 import dev.ktmnav.settings.SettingsRepository
 import dev.ktmnav.sim.RouteSimulator
+import dev.ktmnav.source.NavListenerService
 import dev.ktmnav.update.Updater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +42,7 @@ val Context.container: AppContainer get() = (applicationContext as KtmNavApp).co
  * share one link and one bridge, so there is never a second connection to the bike.
  */
 class AppContainer(context: Context) {
+    private val appContext: Context = context.applicationContext
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val log = DiagLog()
     val settingsRepo = SettingsRepository(context)
@@ -56,7 +58,11 @@ class AppContainer(context: Context) {
         settingsRepo.settings.stateIn(scope, SharingStarted.Eagerly, AppSettings())
 
     init {
-        link.onConnected = { engine.onLinkConnected() }
+        link.onConnected = {
+            // Re-read Maps first, so a turn that is still showing counts as fresh and goes straight back up.
+            NavListenerService.rescanActive(appContext)
+            engine.onLinkConnected()
+        }
         scope.launch {
             settings.collect { s ->
                 adapter.units = s.units

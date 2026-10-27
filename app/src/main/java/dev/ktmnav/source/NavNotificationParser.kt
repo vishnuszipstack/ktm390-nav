@@ -57,7 +57,7 @@ object NavNotificationParser {
     fun parse(n: RawNavNotification, zone: ZoneId = ZoneId.systemDefault()): NavEvent {
         val source = NavPackages.sourceOf(n.packageName) ?: NavSource.OTHER
         val fields = (listOfNotNull(n.title, n.text, n.bigText, n.subText, n.infoText) + n.lines)
-            .map { it.trim() }
+            .map { normalizeSpaces(it).trim() }
             .filter { it.isNotEmpty() }
             .distinct()
         if (fields.isEmpty()) return NavEvent.Unparsed(source, "empty notification", n.postedAtMs)
@@ -121,6 +121,14 @@ object NavNotificationParser {
             ),
         )
     }
+
+    /**
+     * Google Maps writes "300 m" and "10:40 AM" with no-break / narrow no-break spaces, which
+     * regex `\s` doesn't match. Turn every space-like character into a plain space.
+     */
+    fun normalizeSpaces(text: String): String =
+        text.replace(Regex("""[\u00A0\u2007\u2009\u200A\u202F\u205F\u3000]"""), " ")
+            .replace("\u200B", "")
 
     private fun hasManeuverVerb(segment: String): Boolean {
         val m = TextParsing.detectManeuver(segment)

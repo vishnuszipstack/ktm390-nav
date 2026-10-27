@@ -46,12 +46,13 @@ class BridgeEngine(
 
     private val lock = Any()
 
-    fun onNavEvent(event: NavEvent) = synchronized(lock) {
+    /** [quiet]: a periodic re-read of a notification still on screen; only log what changes. */
+    fun onNavEvent(event: NavEvent, quiet: Boolean = false) = synchronized(lock) {
         val now = clock()
         when (event) {
             is NavEvent.Instruction -> {
                 val i = event.instruction
-                log.logSensitive(
+                if (!quiet) log.logSensitive(
                     DiagCategory.PARSER,
                     "${i.source.label}: ${i.maneuver} conf=${"%.2f".format(i.confidence)} dist=${i.distanceToManeuverMeters?.toInt()}",
                     "\"${i.instructionText}\" road=${i.roadName}",
@@ -63,11 +64,14 @@ class BridgeEngine(
                 _status.update { it.copy(navigating = false, latest = null) }
             }
             is NavEvent.Unparsed -> {
+                if (quiet) return@synchronized
                 log.log(DiagCategory.PARSER, "${event.source.label}: ${event.reason}")
                 _status.update { it.copy(lastNotificationAtMs = now, lastSource = event.source) }
             }
         }
-        apply(gate.onEvent(event, now))
+        val decision = gate.onEvent(event, now)
+        if (quiet && decision is InstructionGate.Decision.Ignore) return@synchronized
+        apply(decision)
     }
 
     /** Called every couple of seconds by the service. */
@@ -77,8 +81,12 @@ class BridgeEngine(
 
     /** The socket just opened. Resend the current turn only if it is still fresh (C2). */
     fun onLinkConnected() = synchronized(lock) {
-        val fresh = gate.onLinkRestored(clock())
-        if (fresh != null) {
+        val now = clock()
+        val fresh = gate.onLinkRestored(now)
+        val justSent = status.value.lastSentAtMs?.let { now - it < 1_000 } == true
+        if (fresh != null && justSent) {
+            log.log(DiagCategory.GATE, "link restored, current turn already sent")
+        } else if (fresh != null) {
             send(adapter.guidanceView(fresh), "resume: ${fresh.maneuver}")
         } else {
             log.log(DiagCategory.GATE, "link restored, nothing fresh to resend")

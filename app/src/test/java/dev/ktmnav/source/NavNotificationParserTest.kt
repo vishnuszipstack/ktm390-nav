@@ -46,6 +46,25 @@ class NavNotificationParserTest {
         assertEquals(48_000.0, i.remainingDistanceMeters!!, 0.01)
     }
 
+    @Test fun noBreakSpacesFromGoogleMaps() {
+        val i = instruction(parse("300\u202Fm", "Turn\u00A0left onto MG\u00A0Road", "14\u00A0min · 6.2\u00A0km · 10:14\u202FAM ETA"))
+        assertEquals(Maneuver.LEFT, i.maneuver)
+        assertEquals(300.0, i.distanceToManeuverMeters!!, 0.01)
+        assertEquals("MG Road", i.roadName)
+        assertEquals(6200.0, i.remainingDistanceMeters!!, 0.01)
+        assertEquals(now + 14 * 60_000, i.etaEpochMs)
+    }
+
+    @Test fun customLayoutLinesAreRead() {
+        val e = NavNotificationParser.parse(
+            RawNavNotification(NavPackages.GOOGLE_MAPS, title = "Google Maps", text = "Navigating", lines = listOf("250 m", "Turn right", "onto Residency Road"), postedAtMs = now),
+            zone,
+        )
+        val i = instruction(e)
+        assertEquals(Maneuver.RIGHT, i.maneuver)
+        assertEquals(250.0, i.distanceToManeuverMeters!!, 0.01)
+    }
+
     @Test fun roadNameAloneInTitle() {
         val i = instruction(parse("Residency Road", "Turn right · 200 m", null))
         assertEquals(Maneuver.RIGHT, i.maneuver)

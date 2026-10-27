@@ -18,6 +18,7 @@ import dev.ktmnav.container
 import dev.ktmnav.diag.DiagCategory
 import dev.ktmnav.link.LinkState
 import dev.ktmnav.nav.Units
+import dev.ktmnav.source.NavListenerService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,7 +63,10 @@ class BridgeService : LifecycleService() {
         )
 
         lifecycleScope.launch {
+            var n = 0
             while (isActive) {
+                // Every ~10 s, confirm guidance from the notifications still on screen.
+                if (n++ % 5 == 0) NavListenerService.rescanActive(this@BridgeService)
                 c.engine.tick()
                 delay(TICK_MS)
             }
