@@ -11,7 +11,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
@@ -28,14 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.ktmnav.bridge.BridgeService
 import dev.ktmnav.container
 import dev.ktmnav.nav.DistanceUnits
 import dev.ktmnav.nav.NavSource
-import dev.ktmnav.update.UpdateState
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -45,7 +42,6 @@ fun SettingsScreen() {
     val c = context.container
     val scope = rememberCoroutineScope()
     val s by c.settings.collectAsStateWithLifecycle()
-    val update by c.updater.state.collectAsStateWithLifecycle()
     var confirmReset by remember { mutableStateOf(false) }
 
     Column(
@@ -116,38 +112,7 @@ fun SettingsScreen() {
             ) { on -> scope.launch { c.settingsRepo.setExperimental(on) } }
         }
 
-        SectionCard("Updates") {
-            Text("Installed: version ${c.updater.currentVersionName}")
-            when (val st = update) {
-                UpdateState.Idle -> Unit
-                UpdateState.Checking -> Text("Checking GitHub…")
-                is UpdateState.UpToDate -> Text("You're on the latest build.", color = MaterialTheme.colorScheme.primary)
-                is UpdateState.Available -> Text("Update available: ${st.release.name}", fontWeight = FontWeight.SemiBold)
-                is UpdateState.Downloading -> {
-                    Text("Downloading ${(st.progress * 100).roundToInt()}%")
-                    LinearProgressIndicator(progress = { st.progress }, modifier = Modifier.fillMaxWidth())
-                }
-                is UpdateState.NeedsInstallPermission -> Text(
-                    "Allow this app to install updates (\"Allow from this source\"), come back, and tap Install.",
-                    color = NavColors.Warning,
-                )
-                UpdateState.Installing -> Text("Installing… confirm on the system prompt if asked.")
-                is UpdateState.Failed -> Text(st.message, color = MaterialTheme.colorScheme.error)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                when (val st = update) {
-                    is UpdateState.Available -> Button(onClick = { scope.launch { c.updater.downloadAndInstall(st.release) } }) { Text("Download and install") }
-                    is UpdateState.NeedsInstallPermission -> {
-                        Button(onClick = { context.startActivity(c.updater.installPermissionIntent()) }) { Text("Allow installs") }
-                        OutlinedButton(onClick = { scope.launch { c.updater.downloadAndInstall(st.release) } }) { Text("Install") }
-                    }
-                    else -> {
-                        val busy = st is UpdateState.Checking || st is UpdateState.Downloading || st is UpdateState.Installing
-                        Button(onClick = { scope.launch { c.updater.check() } }, enabled = !busy) { Text("Check for updates") }
-                    }
-                }
-            }
-        }
+        UpdateCard()
 
         SectionCard("Your data") {
             Text(

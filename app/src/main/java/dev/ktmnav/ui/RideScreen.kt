@@ -133,6 +133,8 @@ fun RideScreen(go: (Tab) -> Unit) {
             }
         }
 
+        UpdateCard()
+
         Text(
             "Set up and test only while parked. The phone is optional while riding: guidance keeps " +
                 "flowing to the bike with the screen off.",

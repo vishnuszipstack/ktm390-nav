@@ -30,6 +30,8 @@ class MainActivity : ComponentActivity() {
             }
         }
         if (savedInstanceState == null) {
+            // Quietly look for a newer GitHub build so the Update button can offer it straight away.
+            lifecycleScope.launch { c.updater.check() }
             lifecycleScope.launch {
                 // Wait for stored settings, not the defaults.
                 val s = c.settingsRepo.settings.first()
